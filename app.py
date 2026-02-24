@@ -6,7 +6,12 @@ import os
 app = Flask(__name__)
 
 # ====== KONFIGURACJA BAZY ======
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+database_url = os.environ.get("DATABASE_URL")
+
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -132,20 +137,26 @@ def index():
 @app.route("/dodaj", methods=["GET", "POST"])
 def dodaj():
     if request.method == "POST":
-        nowy = Pojazd(
-            nr_rejestracyjny=request.form["nr"],
-            vin=request.form["vin"],
-            marka=request.form["marka"],
-            model=request.form["model"],
-            rok=request.form["rok"],
-            badanie_techniczne=request.form["badanie"],
-            oc=request.form["oc"],
-            tacho=request.form["tacho"]
-        )
-        db.session.add(nowy)
-        db.session.commit()
-        return redirect("/")
+        try:
+            nowy = Pojazd(
+                nr_rejestracyjny=request.form.get("nr"),
+                vin=request.form.get("vin"),
+                marka=request.form.get("marka"),
+                model=request.form.get("model"),
+                rok=int(request.form.get("rok")) if request.form.get("rok") else None,
+                badanie_techniczne=request.form.get("badanie"),
+                oc=request.form.get("oc"),
+                tacho=request.form.get("tacho")
+            )
 
+            db.session.add(nowy)
+            db.session.commit()
+
+            return redirect("/")
+
+        except Exception as e:
+            db.session.rollback()
+            return f"Błąd zapisu: {str(e)}"
     return f"""
     {STYLE}
     <div class="header"><h1>Dodaj pojazd</h1></div>
