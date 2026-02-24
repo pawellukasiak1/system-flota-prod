@@ -6,13 +6,7 @@ import os
 app = Flask(__name__)
 
 # ====== KONFIGURACJA BAZY ======
-database_url = os.environ.get("DATABASE_URL")
-
-# Render czasem daje postgres:// zamiast postgresql://
-if database_url and database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -33,7 +27,6 @@ class Pojazd(db.Model):
 
     serwisy = db.relationship("Serwis", backref="pojazd", cascade="all, delete")
 
-
 class Serwis(db.Model):
     __tablename__ = "serwis"
 
@@ -43,7 +36,6 @@ class Serwis(db.Model):
     opis = db.Column(db.Text)
     przebieg = db.Column(db.Integer)
     koszt = db.Column(db.Float)
-
 
 with app.app_context():
     db.create_all()
@@ -103,7 +95,7 @@ def index():
             <td>{p.nr_rejestracyjny}</td>
             <td>{p.vin}</td>
             <td>{p.marka} {p.model}</td>
-            <td>{p.rok or ""}</td>
+            <td>{p.rok}</td>
             <td style="{styl_bad}">{badanie}</td>
             <td style="{styl_oc}">{oc}</td>
             <td style="{styl_tacho}">{tacho}</td>
@@ -140,21 +132,16 @@ def index():
 @app.route("/dodaj", methods=["GET", "POST"])
 def dodaj():
     if request.method == "POST":
-
-        rok_value = request.form.get("rok")
-        rok_int = int(rok_value) if rok_value else None
-
         nowy = Pojazd(
-            nr_rejestracyjny=request.form.get("nr"),
-            vin=request.form.get("vin"),
-            marka=request.form.get("marka"),
-            model=request.form.get("model"),
-            rok=rok_int,
-            badanie_techniczne=request.form.get("badanie"),
-            oc=request.form.get("oc"),
-            tacho=request.form.get("tacho")
+            nr_rejestracyjny=request.form["nr"],
+            vin=request.form["vin"],
+            marka=request.form["marka"],
+            model=request.form["model"],
+            rok=request.form["rok"],
+            badanie_techniczne=request.form["badanie"],
+            oc=request.form["oc"],
+            tacho=request.form["tacho"]
         )
-
         db.session.add(nowy)
         db.session.commit()
         return redirect("/")
@@ -168,7 +155,7 @@ def dodaj():
             VIN:<br><input name="vin"><br>
             Marka:<br><input name="marka"><br>
             Model:<br><input name="model"><br>
-            Rok:<br><input type="number" name="rok"><br>
+            Rok:<br><input name="rok"><br>
             Badanie techniczne:<br><input type="date" name="badanie"><br>
             OC:<br><input type="date" name="oc"><br>
             Tacho:<br><input type="date" name="tacho"><br><br>
