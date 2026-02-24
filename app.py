@@ -244,6 +244,81 @@ def usun(id):
         db.session.commit()
     return redirect("/")
 
+# ====== SERWIS ======
+@app.route("/serwis/<int:id>", methods=["GET", "POST"])
+def serwis(id):
+    pojazd = Pojazd.query.get_or_404(id)
+
+    if request.method == "POST":
+        try:
+            nowy = Serwis(
+                pojazd_id=id,
+                data=request.form.get("data"),
+                opis=request.form.get("opis"),
+                przebieg=int(request.form.get("przebieg")) if request.form.get("przebieg") else None,
+                koszt=float(request.form.get("koszt")) if request.form.get("koszt") else None
+            )
+
+            db.session.add(nowy)
+            db.session.commit()
+
+            return redirect(f"/serwis/{id}")
+
+        except Exception as e:
+            db.session.rollback()
+            return f"Błąd serwisu: {str(e)}"
+
+    wpisy = Serwis.query.filter_by(pojazd_id=id).order_by(Serwis.data.desc()).all()
+
+    rows = ""
+    for s in wpisy:
+        rows += f"""
+        <tr>
+            <td>{s.data}</td>
+            <td>{s.opis}</td>
+            <td>{s.przebieg}</td>
+            <td>{s.koszt}</td>
+        </tr>
+        """
+
+    return f"""
+    {STYLE}
+    <div class="header"><h1>Serwis – {pojazd.marka} {pojazd.model}</h1></div>
+    <div class="container">
+
+        <form method="post">
+            Data:<br>
+            <input type="date" name="data"><br>
+
+            Opis:<br>
+            <textarea name="opis"></textarea><br>
+
+            Przebieg:<br>
+            <input name="przebieg"><br>
+
+            Koszt:<br>
+            <input name="koszt"><br><br>
+
+            <button>Dodaj wpis</button>
+        </form>
+
+        <br><br>
+
+        <table>
+            <tr>
+                <th>Data</th>
+                <th>Opis</th>
+                <th>Przebieg</th>
+                <th>Koszt</th>
+            </tr>
+            {rows}
+        </table>
+
+        <br>
+        <a class="btn btn-blue" href="/">⬅ Powrót</a>
+    </div>
+    """
+
 # ====== START ======
 if __name__ == "__main__":
     app.run()
