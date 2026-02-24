@@ -176,6 +176,64 @@ def dodaj():
         <a class="btn btn-blue" href="/">⬅ Powrót</a>
     </div>
     """
+# ====== EDYTUJ POJAZD ======
+@app.route("/edytuj/<int:id>", methods=["GET", "POST"])
+def edytuj(id):
+    pojazd = Pojazd.query.get_or_404(id)
+
+    if request.method == "POST":
+        try:
+            pojazd.nr_rejestracyjny = request.form.get("nr")
+            pojazd.vin = request.form.get("vin")
+            pojazd.marka = request.form.get("marka")
+            pojazd.model = request.form.get("model")
+            pojazd.rok = int(request.form.get("rok")) if request.form.get("rok") else None
+            pojazd.badanie_techniczne = request.form.get("badanie")
+            pojazd.oc = request.form.get("oc")
+            pojazd.tacho = request.form.get("tacho")
+
+            db.session.commit()
+            return redirect("/")
+
+        except Exception as e:
+            db.session.rollback()
+            return f"Błąd edycji: {str(e)}"
+
+    return f"""
+    {STYLE}
+    <div class="header"><h1>Edytuj pojazd</h1></div>
+    <div class="container">
+        <form method="post">
+            Nr rejestracyjny:<br>
+            <input name="nr" value="{pojazd.nr_rejestracyjny}"><br>
+
+            VIN:<br>
+            <input name="vin" value="{pojazd.vin}"><br>
+
+            Marka:<br>
+            <input name="marka" value="{pojazd.marka}"><br>
+
+            Model:<br>
+            <input name="model" value="{pojazd.model}"><br>
+
+            Rok:<br>
+            <input name="rok" value="{pojazd.rok if pojazd.rok else ''}"><br>
+
+            Badanie techniczne:<br>
+            <input type="date" name="badanie" value="{pojazd.badanie_techniczne or ''}"><br>
+
+            OC:<br>
+            <input type="date" name="oc" value="{pojazd.oc or ''}"><br>
+
+            Tacho:<br>
+            <input type="date" name="tacho" value="{pojazd.tacho or ''}"><br><br>
+
+            <button>Zapisz zmiany</button>
+        </form>
+        <br>
+        <a class="btn btn-blue" href="/">⬅ Powrót</a>
+    </div>
+    """
 
 # ====== USUŃ POJAZD ======
 @app.route("/usun/<int:id>")
