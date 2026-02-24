@@ -273,13 +273,20 @@ def serwis(id):
     rows = ""
     for s in wpisy:
         rows += f"""
-        <tr>
-            <td>{s.data}</td>
+	<tr>
+   	    <td>{s.data}</td>
             <td>{s.opis}</td>
             <td>{s.przebieg}</td>
             <td>{s.koszt}</td>
-        </tr>
-        """
+            <td>
+        	<a class="btn btn-red"
+           	   href="/usun_serwis/{s.id}"
+           	   onclick="return confirm('Na pewno usunąć wpis serwisowy?')">
+                   Usuń
+        	</a>
+    	    </td>
+	</tr>
+	"""
 
     return f"""
     {STYLE}
@@ -310,6 +317,7 @@ def serwis(id):
                 <th>Opis</th>
                 <th>Przebieg</th>
                 <th>Koszt</th>
+		<th>Akcja</th>
             </tr>
             {rows}
         </table>
@@ -318,6 +326,21 @@ def serwis(id):
         <a class="btn btn-blue" href="/">⬅ Powrót</a>
     </div>
     """
+# ====== USUN Z SERWIS ======
+
+@app.route("/usun_serwis/<int:id>")
+def usun_serwis(id):
+    wpis = Serwis.query.get_or_404(id)
+    pojazd_id = wpis.pojazd_id
+
+    try:
+        db.session.delete(wpis)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return f"Błąd usuwania: {str(e)}"
+
+    return redirect(f"/serwis/{pojazd_id}")
 
 # ====== START ======
 if __name__ == "__main__":
